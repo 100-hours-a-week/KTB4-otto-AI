@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         ZEP Daily Time Tracker Manual Checkout
+// @name         ZEP Daily Time Tracker Manual Checkout Safe Position
 // @namespace    http://tampermonkey.net/
-// @version      7.0
-// @description  ZEP 접속 시간을 자동으로 시작하고, 퇴근 버튼을 눌러야 하루 기록을 마무리합니다.
+// @version      7.1
+// @description  ZEP 접속 시간을 자동으로 시작하고, 퇴근 버튼을 눌러 하루 기록을 마무리합니다. 창 크기가 바뀌어도 패널이 화면 안에 보이도록 자동 보정합니다.
 // @match        https://zep.us/play/*
 // @run-at       document-idle
 // @grant        GM_getValue
@@ -14,7 +14,7 @@
 
   const STORAGE_KEY = 'zep_daily_time_records_v6';
   const STATE_KEY = 'zep_daily_time_state_v7';
-  const POSITION_KEY = 'zep_time_tracker_panel_position_v2';
+  const POSITION_KEY = 'zep_time_tracker_panel_position_v3';
 
   let activeKey = null;
   let lastTickTime = Date.now();
@@ -225,6 +225,56 @@
     return button;
   }
 
+  function clampPosition(left, top) {
+    if (!panel) {
+      return { left: 20, top: 20 };
+    }
+
+    const margin = 10;
+    const panelWidth = panel.offsetWidth || 230;
+    const panelHeight = panel.offsetHeight || 180;
+
+    const maxLeft = Math.max(margin, window.innerWidth - panelWidth - margin);
+    const maxTop = Math.max(margin, window.innerHeight - panelHeight - margin);
+
+    return {
+      left: Math.min(Math.max(left, margin), maxLeft),
+      top: Math.min(Math.max(top, margin), maxTop),
+    };
+  }
+
+  function applyPanelPosition(left, top, shouldSave) {
+    if (!panel) return;
+
+    const safe = clampPosition(left, top);
+
+    panel.style.left = `${safe.left}px`;
+    panel.style.top = `${safe.top}px`;
+    panel.style.right = 'auto';
+
+    if (shouldSave) {
+      savePosition(safe.left, safe.top);
+    }
+  }
+
+  function keepPanelInView() {
+    if (!panel) return;
+
+    const rect = panel.getBoundingClientRect();
+    applyPanelPosition(rect.left, rect.top, true);
+  }
+
+  function resetPanelPosition() {
+    if (!panel) return;
+
+    const margin = 20;
+    const panelWidth = panel.offsetWidth || 230;
+    const left = Math.max(margin, window.innerWidth - panelWidth - margin);
+    const top = 20;
+
+    applyPanelPosition(left, top, true);
+  }
+
   function makeDraggable() {
     let isDragging = false;
     let startMouseX = 0;
@@ -254,20 +304,10 @@
     document.addEventListener('mousemove', function (event) {
       if (!isDragging) return;
 
-      let newLeft = startLeft + event.clientX - startMouseX;
-      let newTop = startTop + event.clientY - startMouseY;
+      const newLeft = startLeft + event.clientX - startMouseX;
+      const newTop = startTop + event.clientY - startMouseY;
 
-      const panelWidth = panel.offsetWidth;
-      const panelHeight = panel.offsetHeight;
-
-      const maxLeft = window.innerWidth - panelWidth;
-      const maxTop = window.innerHeight - panelHeight;
-
-      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-      newTop = Math.max(0, Math.min(newTop, maxTop));
-
-      panel.style.left = `${newLeft}px`;
-      panel.style.top = `${newTop}px`;
+      applyPanelPosition(newLeft, newTop, false);
     });
 
     document.addEventListener('mouseup', function () {
@@ -277,7 +317,7 @@
       titleArea.style.cursor = 'grab';
 
       const rect = panel.getBoundingClientRect();
-      savePosition(rect.left, rect.top);
+      applyPanelPosition(rect.left, rect.top, true);
     });
   }
 
@@ -292,7 +332,7 @@
 
     panel.style.position = 'fixed';
     panel.style.zIndex = '999999';
-    panel.style.width = '220px';
+    panel.style.width = '230px';
     panel.style.background = 'rgba(0, 0, 0, 0.84)';
     panel.style.color = 'white';
     panel.style.padding = '10px';
@@ -302,16 +342,6 @@
     panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.35)';
     panel.style.lineHeight = '1.45';
     panel.style.userSelect = 'none';
-
-    const savedPosition = loadPosition();
-
-    if (savedPosition) {
-      panel.style.left = `${savedPosition.left}px`;
-      panel.style.top = `${savedPosition.top}px`;
-    } else {
-      panel.style.top = '20px';
-      panel.style.right = '20px';
-    }
 
     titleArea = document.createElement('div');
     titleArea.style.fontSize = '14px';
@@ -359,8 +389,20 @@
 
     document.body.appendChild(panel);
 
+    const savedPosition = loadPosition();
+
+    if (savedPosition) {
+      applyPanelPosition(savedPosition.left, savedPosition.top, false);
+    } else {
+      resetPanelPosition();
+    }
+
     makeDraggable();
     updatePanel();
+
+    setTimeout(function () {
+      keepPanelInView();
+    }, 100);
   }
 
   function checkout() {
@@ -430,9 +472,7 @@
       function () {
         if (activeKey) {
           const ok = confirm('현재 기록을 마무리하고 퇴근 처리할까요?');
-
           if (!ok) return;
-
           checkout();
         } else {
           startWorkday(getTodayKey());
@@ -442,15 +482,16 @@
 
     const resetButton = createButton('초기화', function () {
       const ok = confirm('현재 기록 시간을 0으로 초기화할까요?');
-
       if (!ok) return;
-
       resetCurrentRecord();
+    });
+
+    const positionButton = createButton('위치초기화', function () {
+      resetPanelPosition();
     });
 
     const resetAllButton = createButton('전체삭제', function () {
       const ok = confirm('모든 날짜의 ZEP 접속 기록을 삭제할까요?');
-
       if (!ok) return;
 
       saveRecords({});
@@ -466,6 +507,7 @@
     buttonArea.appendChild(recordsButton);
     buttonArea.appendChild(workButton);
     buttonArea.appendChild(resetButton);
+    buttonArea.appendChild(positionButton);
     buttonArea.appendChild(resetAllButton);
   }
 
@@ -526,6 +568,10 @@
 
     updateButtons();
     updateRecordsArea();
+
+    setTimeout(function () {
+      keepPanelInView();
+    }, 0);
   }
 
   function tick() {
@@ -575,6 +621,10 @@
 
   window.addEventListener('beforeunload', tick);
   window.addEventListener('pagehide', tick);
+
+  window.addEventListener('resize', function () {
+    keepPanelInView();
+  });
 
   updateButtons();
   tick();
