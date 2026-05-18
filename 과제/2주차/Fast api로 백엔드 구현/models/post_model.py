@@ -1,9 +1,9 @@
 posts = [
     {
         "id": 1,
-        "title": "첫 번째 게시글",
-        "content": "FastAPI로 만든 커뮤니티 서비스 예시입니다.",
-        "author_id": 1,
+        "title": "첫 번째 글",
+        "content": "FastAPI로 만든 글 CRUD 예시입니다.",
+        "username": "minwoo",
     }
 ]
 
@@ -21,24 +21,14 @@ def get_post_by_id(post_id: int):
     return None
 
 
-def get_posts_by_author(author_id: int):
-    result = []
-
-    for post in posts:
-        if post["author_id"] == author_id:
-            result.append(post)
-
-    return result
-
-
-def add_post(title: str, content: str, author_id: int):
+def add_post(title: str, content: str, username: str):
     global next_post_id
 
     new_post = {
         "id": next_post_id,
         "title": title,
         "content": content,
-        "author_id": author_id,
+        "username": username,
     }
 
     posts.append(new_post)
@@ -47,16 +37,17 @@ def add_post(title: str, content: str, author_id: int):
     return new_post
 
 
-def update_post(post_id: int, title: str, content: str):
+def update_post(post_id: int, title: str, content: str, username: str):
     post = get_post_by_id(post_id)
 
     post["title"] = title
     post["content"] = content
+    post["username"] = username
 
     return post
 
 
-def patch_post(post_id: int, title=None, content=None):
+def patch_post(post_id: int, title=None, content=None, username=None):
     post = get_post_by_id(post_id)
 
     if title is not None:
@@ -64,6 +55,9 @@ def patch_post(post_id: int, title=None, content=None):
 
     if content is not None:
         post["content"] = content
+
+    if username is not None:
+        post["username"] = username
 
     return post
 

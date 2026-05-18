@@ -12,17 +12,19 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 class PostCreate(BaseModel):
     title: str
     content: str
-    author_id: int
+    username: str
 
 
 class PostUpdate(BaseModel):
     title: str
     content: str
+    username: str
 
 
 class PostPatch(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
+    username: Optional[str] = None
 
 
 @router.get("")
