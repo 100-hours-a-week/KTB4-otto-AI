@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 
 from routers.post_router import router as post_router
 from routers.comment_router import router as comment_router
+from routers.llm_router import router as llm_router
 
 app = FastAPI(
     title="FastAPI로 백엔드 구현",
@@ -12,6 +13,7 @@ app = FastAPI(
 
 app.include_router(post_router)
 app.include_router(comment_router)
+app.include_router(llm_router)
 
 
 @app.get("/", response_class=HTMLResponse)

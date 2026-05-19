@@ -116,3 +116,23 @@ REST API는 URL로 자원을 표현하고, HTTP Method로 행위를 표현하는
 또한 URL에는 동작을 직접 적기보다 자원을 표현하고, 동작은 HTTP Method로 나타내는 것이 REST API 설계에서 중요하다는 점을 배웠습니다.
 
 이번 구현에서는 실제 데이터베이스 대신 Python 리스트를 사용했기 때문에 서버를 재시작하면 데이터가 초기화됩니다. 하지만 메모리 기반 데이터 관리부터 시작해 이후 파일 저장이나 데이터베이스로 확장할 수 있다는 흐름을 이해할 수 있었습니다.
+
+## LLM 연동 기능 추가
+
+추가 과제로 로컬 LLM 연동 기능을 구현했습니다.
+
+Ollama에 설치된 gemma4 모델을 사용하여 특정 글의 내용을 요약하는 API를 추가했습니다.
+
+| 기능 | Method | URL |
+|---|---|---|
+| 글 요약 | POST | /posts/{post_id}/summary |
+
+이 API는 글의 title, content, username을 가져와 로컬 Ollama 서버에 전달하고, gemma4 모델이 생성한 요약 결과를 JSON으로 반환합니다.
+
+Ollama 서버가 실행 중이어야 정상 동작합니다.
+
+실행 예시:
+
+ollama run gemma4
+
+그 후 FastAPI 서버를 실행하고 /docs에서 POST /posts/{post_id}/summary API를 테스트할 수 있습니다.
