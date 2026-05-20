@@ -1,69 +1,95 @@
-posts = [
-    {
-        "id": 1,
-        "title": "첫 번째 글",
-        "content": "FastAPI로 만든 글 CRUD 예시입니다.",
-        "username": "minwoo",
-    }
-]
+from database import get_connection
 
-next_post_id = 2
+
+def _row_to_dict(row):
+    if row is None:
+        return None
+
+    return dict(row)
 
 
 def get_posts():
-    return posts
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, title, content, username, created_at
+            FROM posts
+            ORDER BY id DESC
+            """
+        ).fetchall()
+
+    return [dict(row) for row in rows]
 
 
 def get_post_by_id(post_id: int):
-    for post in posts:
-        if post["id"] == post_id:
-            return post
-    return None
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT id, title, content, username, created_at
+            FROM posts
+            WHERE id = ?
+            """,
+            (post_id,),
+        ).fetchone()
+
+    return _row_to_dict(row)
 
 
 def add_post(title: str, content: str, username: str):
-    global next_post_id
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO posts (title, content, username)
+            VALUES (?, ?, ?)
+            """,
+            (title, content, username),
+        )
 
-    new_post = {
-        "id": next_post_id,
-        "title": title,
-        "content": content,
-        "username": username,
-    }
+        post_id = cursor.lastrowid
 
-    posts.append(new_post)
-    next_post_id += 1
-
-    return new_post
+    return get_post_by_id(post_id)
 
 
 def update_post(post_id: int, title: str, content: str, username: str):
-    post = get_post_by_id(post_id)
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE posts
+            SET title = ?, content = ?, username = ?
+            WHERE id = ?
+            """,
+            (title, content, username, post_id),
+        )
 
-    post["title"] = title
-    post["content"] = content
-    post["username"] = username
-
-    return post
+    return get_post_by_id(post_id)
 
 
 def patch_post(post_id: int, title=None, content=None, username=None):
     post = get_post_by_id(post_id)
 
-    if title is not None:
-        post["title"] = title
+    new_title = title if title is not None else post["title"]
+    new_content = content if content is not None else post["content"]
+    new_username = username if username is not None else post["username"]
 
-    if content is not None:
-        post["content"] = content
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE posts
+            SET title = ?, content = ?, username = ?
+            WHERE id = ?
+            """,
+            (new_title, new_content, new_username, post_id),
+        )
 
-    if username is not None:
-        post["username"] = username
-
-    return post
+    return get_post_by_id(post_id)
 
 
 def delete_post(post_id: int):
-    post = get_post_by_id(post_id)
-
-    if post:
-        posts.remove(post)
+    with get_connection() as conn:
+        conn.execute(
+            """
+            DELETE FROM posts
+            WHERE id = ?
+            """,
+            (post_id,),
+        )

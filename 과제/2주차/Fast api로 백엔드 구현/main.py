@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
+from database import init_db
+
 from routers.post_router import router as post_router
 from routers.comment_router import router as comment_router
 from routers.llm_router import router as llm_router
+
+init_db()
 
 app = FastAPI(
     title="FastAPI로 백엔드 구현",

@@ -1,69 +1,93 @@
-comments = [
-    {
-        "id": 1,
-        "post_id": 1,
-        "content": "첫 번째 댓글입니다.",
-        "username": "minwoo",
-    }
-]
+from database import get_connection
 
-next_comment_id = 2
+
+def _row_to_dict(row):
+    if row is None:
+        return None
+
+    return dict(row)
 
 
 def get_comments_by_post_id(post_id: int):
-    result = []
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, post_id, content, username, created_at
+            FROM comments
+            WHERE post_id = ?
+            ORDER BY id ASC
+            """,
+            (post_id,),
+        ).fetchall()
 
-    for comment in comments:
-        if comment["post_id"] == post_id:
-            result.append(comment)
-
-    return result
+    return [dict(row) for row in rows]
 
 
 def get_comment_by_id(comment_id: int):
-    for comment in comments:
-        if comment["id"] == comment_id:
-            return comment
-    return None
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT id, post_id, content, username, created_at
+            FROM comments
+            WHERE id = ?
+            """,
+            (comment_id,),
+        ).fetchone()
+
+    return _row_to_dict(row)
 
 
 def add_comment(post_id: int, content: str, username: str):
-    global next_comment_id
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO comments (post_id, content, username)
+            VALUES (?, ?, ?)
+            """,
+            (post_id, content, username),
+        )
 
-    new_comment = {
-        "id": next_comment_id,
-        "post_id": post_id,
-        "content": content,
-        "username": username,
-    }
+        comment_id = cursor.lastrowid
 
-    comments.append(new_comment)
-    next_comment_id += 1
-
-    return new_comment
+    return get_comment_by_id(comment_id)
 
 
 def patch_comment(comment_id: int, content=None, username=None):
     comment = get_comment_by_id(comment_id)
 
-    if content is not None:
-        comment["content"] = content
+    new_content = content if content is not None else comment["content"]
+    new_username = username if username is not None else comment["username"]
 
-    if username is not None:
-        comment["username"] = username
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE comments
+            SET content = ?, username = ?
+            WHERE id = ?
+            """,
+            (new_content, new_username, comment_id),
+        )
 
-    return comment
+    return get_comment_by_id(comment_id)
 
 
 def delete_comment(comment_id: int):
-    comment = get_comment_by_id(comment_id)
-
-    if comment:
-        comments.remove(comment)
+    with get_connection() as conn:
+        conn.execute(
+            """
+            DELETE FROM comments
+            WHERE id = ?
+            """,
+            (comment_id,),
+        )
 
 
 def delete_comments_by_post_id(post_id: int):
-    target_comments = get_comments_by_post_id(post_id)
-
-    for comment in target_comments:
-        comments.remove(comment)
+    with get_connection() as conn:
+        conn.execute(
+            """
+            DELETE FROM comments
+            WHERE post_id = ?
+            """,
+            (post_id,),
+        )
