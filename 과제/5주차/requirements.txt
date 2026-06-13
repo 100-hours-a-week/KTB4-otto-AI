@@ -1,0 +1,12 @@
+# --- KoGPT2 버전 (진짜 AI 챗봇, 권장) ---
+torch>=2.0
+transformers>=4.30
+
+# --- FastAPI 웹 서버 ---
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.0
+
+# --- LSTM 버전(직접 학습) 도 쓰려면 ---
+tensorflow>=2.16
+numpy>=1.26
