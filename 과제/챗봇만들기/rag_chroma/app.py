@@ -17,20 +17,16 @@ from pydantic import BaseModel
 import rag_pipeline as rag
 import generator as gen
 
-app = FastAPI(title="RAG 챗봇 (ChromaDB)")
+app = FastAPI(title="otto 챗봇")
 
 @app.on_event("startup")
 def _startup():
-    
-    if RAG_SOURCE != "web":
-        try:
-            rag.get_collection().count()
-        except Exception:
-            print("ChromaDB 인덱스가 없어 새로 생성합니다...")
-            rag.build_index()
-    print(f"검색 소스: {RAG_SOURCE} | LLM 백엔드: {'gemini-web' if RAG_SOURCE=='web' else gen.get_backend_name()}")
-
-RAG_SOURCE = os.environ.get("RAG_SOURCE", "docs").lower()
+    try:
+        rag.get_collection().count()
+    except Exception:
+        print("ChromaDB 인덱스가 없어 새로 생성합니다...")
+        rag.build_index()
+    print(f"LLM 백엔드: {gen.get_backend_name()}")
 
 class ChatRequest(BaseModel):
     message: str
@@ -43,11 +39,6 @@ class ChatResponse(BaseModel):
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    
-    if RAG_SOURCE == "web":
-        reply, sources = gen.answer_gemini_web(req.message)
-        return ChatResponse(reply=reply, backend="gemini-web", sources=sources)
-
     hits = rag.search(req.message, n_results=req.n_results)
     reply = gen.generate(req.message, hits)
     return ChatResponse(
@@ -56,7 +47,7 @@ def chat(req: ChatRequest):
         sources=[{"source": h["source"], "similarity": h["similarity"]} for h in hits],
     )
 
-@app.get("/search")   
+@app.get("/search")
 def search_only(q: str, n_results: int = 3):
     return {"query": q, "results": rag.search(q, n_results=n_results)}
 

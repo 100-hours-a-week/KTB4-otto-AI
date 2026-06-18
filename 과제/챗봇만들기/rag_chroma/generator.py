@@ -84,59 +84,11 @@ def answer_claude(question, hits):
     )
     return "".join(b.text for b in resp.content if b.type == "text").strip()
 
-def answer_gemini_web(question):
-    if not os.environ.get("GEMINI_API_KEY"):
-        return ("GEMINI_API_KEY 가 설정되지 않았어요. .env 에 키를 넣어주세요. "
-                "(https://aistudio.google.com/app/apikey 에서 발급)", [])
-
-    from google import genai
-    from google.genai import types
-
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-
-    cfg = types.GenerateContentConfig(
-        tools=[types.Tool(google_search=types.GoogleSearch())],
-        system_instruction=(
-            "너는 한국어로 답하는 친절한 비서다. "
-            "Google 검색 결과를 근거로 정확하고 간결하게 한국어로 답하라. "
-            "모르면 모른다고 말하라."
-        ),
-    )
-
-    import time
-    resp, last_err = None, None
-    for attempt in range(4):
-        try:
-            resp = client.models.generate_content(model=model, contents=question, config=cfg)
-            break
-        except Exception as e:
-            last_err = e
-            msg = str(e)
-            if "503" in msg or "UNAVAILABLE" in msg or "429" in msg or "overloaded" in msg.lower():
-                time.sleep(1.5 * (attempt + 1))   
-                continue
-            return (f"Gemini 호출 중 오류가 발생했어요: {e}", [])
-    if resp is None:
-        return ("Gemini 서버가 잠시 혼잡해요(503). 잠시 후 다시 시도해 주세요. "
-                f"(자동 재시도 4회 모두 실패: {last_err})", [])
-
-    text = (resp.text or "").strip()
-    sources = []
-    try:
-        gm = resp.candidates[0].grounding_metadata
-        for ch in (gm.grounding_chunks or []):
-            if getattr(ch, "web", None):
-                sources.append({"source": ch.web.title or ch.web.uri, "url": ch.web.uri})
-    except Exception:
-        pass
-    return text or "답변을 생성하지 못했어요.", sources
-
 def get_backend_name():
     b = os.environ.get("LLM_BACKEND", "").lower()
     if b in ("local", "kogpt2", "finetuned", "claude"):
         return b
-    return "claude" if os.environ.get("ANTHROPIC_API_KEY") else "local"
+    return "finetuned"
 
 def generate(question, hits):
     backend = get_backend_name()
