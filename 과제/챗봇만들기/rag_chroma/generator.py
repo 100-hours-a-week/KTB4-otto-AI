@@ -43,8 +43,14 @@ def _load_finetuned():
         import torch
         from transformers import AutoTokenizer, AutoModelForCausalLM
         path = os.environ.get("FINETUNED_MODEL_PATH", "kogpt2-finetuned")
-        _ft_tokenizer = AutoTokenizer.from_pretrained(path)
-        _ft_model = AutoModelForCausalLM.from_pretrained(path)
+        try:
+            _ft_tokenizer = AutoTokenizer.from_pretrained(path)
+        except Exception:
+            fallback = os.environ.get("FINETUNED_TOKENIZER_PATH", "EleutherAI/polyglot-ko-1.3b")
+            _ft_tokenizer = AutoTokenizer.from_pretrained(fallback)
+        _ft_model = AutoModelForCausalLM.from_pretrained(path, low_cpu_mem_usage=True)
+        if _ft_tokenizer.pad_token_id is None:
+            _ft_tokenizer.pad_token = _ft_tokenizer.eos_token
         _ft_model.eval()
     return _ft_model, _ft_tokenizer
 
@@ -52,18 +58,17 @@ def answer_finetuned(question, hits):
     import torch
     model, tokenizer = _load_finetuned()
 
-    context = "\n".join(f"- {h['text']}" for h in hits)
-    prompt = f"### 질문: {question}\n참고:\n{context}\n### 답변:"
+    prompt = f"### 질문: {question}\n\n### 답변:"
 
     ids = tokenizer.encode(prompt, return_tensors="pt").to(model.device)
     with torch.no_grad():
         out = model.generate(
-            ids, max_new_tokens=100, do_sample=True, top_p=0.92,
-            temperature=0.7, repetition_penalty=1.3, no_repeat_ngram_size=3,
+            ids, max_new_tokens=120, do_sample=True, top_p=0.92,
+            temperature=0.7, repetition_penalty=1.1,
             pad_token_id=tokenizer.pad_token_id, eos_token_id=tokenizer.eos_token_id,
         )
-    text = tokenizer.decode(out[0], skip_special_tokens=True)
-    return text[len(prompt):].split("### 질문")[0].strip() or answer_local(question, hits)
+    gen = out[0][ids.shape[1]:]
+    return tokenizer.decode(gen, skip_special_tokens=True).split("###")[0].strip() or answer_local(question, hits)
 
 def answer_claude(question, hits):
     from anthropic import Anthropic
