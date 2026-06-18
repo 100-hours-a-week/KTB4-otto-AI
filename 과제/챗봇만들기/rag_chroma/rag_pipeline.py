@@ -15,11 +15,22 @@ COLLECTION_NAME = "rag_demo"
 
 EMBED_MODEL_NAME = "jhgan/ko-sroberta-multitask"
 
+def _read_pdf(path):
+    from pypdf import PdfReader
+    reader = PdfReader(path)
+    return "\n".join((page.extract_text() or "") for page in reader.pages)
+
 def load_documents():
     docs = []
-    for path in glob.glob(os.path.join(DOCS_DIR, "*.md")) +                glob.glob(os.path.join(DOCS_DIR, "*.txt")):
-        with open(path, encoding="utf-8") as f:
-            text = f.read()
+    paths = (glob.glob(os.path.join(DOCS_DIR, "*.md"))
+             + glob.glob(os.path.join(DOCS_DIR, "*.txt"))
+             + glob.glob(os.path.join(DOCS_DIR, "*.pdf")))
+    for path in paths:
+        if path.lower().endswith(".pdf"):
+            text = _read_pdf(path)
+        else:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
         docs.append((preprocess(text), os.path.basename(path)))
     return docs
 

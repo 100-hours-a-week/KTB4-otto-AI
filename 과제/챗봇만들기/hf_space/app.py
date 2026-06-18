@@ -3,8 +3,12 @@ import gradio as gr
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 MODEL = "jjminu/koalpaca-chatbot"
+BASE = "EleutherAI/polyglot-ko-1.3b"
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL)
+try:
+    tokenizer = AutoTokenizer.from_pretrained(MODEL)
+except Exception:
+    tokenizer = AutoTokenizer.from_pretrained(BASE)
 if tokenizer.pad_token_id is None:
     tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.float32)
