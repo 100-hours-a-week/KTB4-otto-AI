@@ -1,7 +1,0 @@
-# API 키 — 절대 커밋 금지
-.env
-
-# 생성물
-index/
-__pycache__/
-*.pyc
