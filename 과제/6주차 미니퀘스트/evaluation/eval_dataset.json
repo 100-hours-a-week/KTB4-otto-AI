@@ -1,0 +1,34 @@
+[
+  {
+    "question": "RAG는 무엇의 약자이며 어떤 아키텍처인가요?",
+    "ground_truth": "RAG는 Retrieval-Augmented Generation(검색 증강 생성)의 약자로, LLM이 답변을 생성하기 전에 외부 지식 베이스에서 관련 문서를 검색해 근거로 함께 제공하는 아키텍처입니다."
+  },
+  {
+    "question": "RAG를 사용하면 어떤 장점이 있나요?",
+    "ground_truth": "신뢰할 수 있는 외부 문서를 근거로 답변하여 환각을 줄이고, 출처를 제시할 수 있으며, 모델 재학습 없이 최신 지식을 반영할 수 있습니다."
+  },
+  {
+    "question": "RAG 파이프라인의 단계를 순서대로 알려주세요.",
+    "ground_truth": "문서 로딩, 청킹, 임베딩, 인덱싱, 검색, 생성의 순서로 구성됩니다."
+  },
+  {
+    "question": "FAISS는 무엇이고 누가 개발했나요?",
+    "ground_truth": "FAISS는 Meta가 개발한 오픈소스 벡터 유사도 검색 라이브러리로, 로컬 환경에서 빠른 벡터 검색에 널리 쓰입니다."
+  },
+  {
+    "question": "Gemini에서 텍스트 임베딩에는 어떤 모델을 사용하나요?",
+    "ground_truth": "text-embedding-004 모델을 사용합니다."
+  },
+  {
+    "question": "RAGAS의 네 가지 핵심 평가 지표는 무엇인가요?",
+    "ground_truth": "Faithfulness(충실성), Answer Relevancy(답변 관련성), Context Precision(문맥 정밀도), Context Recall(문맥 재현율)입니다."
+  },
+  {
+    "question": "Faithfulness 지표는 무엇을 측정하나요?",
+    "ground_truth": "생성된 답변이 검색된 문맥에 의해 뒷받침되는 정도, 즉 환각이 적을수록 높은 점수를 받는 지표입니다."
+  },
+  {
+    "question": "RAGAS 지표 중 검색 품질을 진단하는 지표는 무엇인가요?",
+    "ground_truth": "Context Precision(문맥 정밀도)과 Context Recall(문맥 재현율)이 검색 품질을 진단합니다."
+  }
+]
