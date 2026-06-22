@@ -1,31 +1,21 @@
 # otto-GPT : 처음부터 만드는 한국어 언어모델
 
-가져다 쓰는 사전학습 모델 없이, **토크나이저·아키텍처·가중치를 전부 직접 만드는** GPT.
+토크나이저·아키텍처·가중치를 전부 직접 만드는 from-scratch GPT.
 
 | 항목 | 내용 |
 |---|---|
-| 아키텍처 | GPT (Decoder-only Transformer), 직접 구현 |
-| 규모 | 약 57M 파라미터 (n_layer=10, n_embd=624) |
+| 아키텍처 | GPT (Decoder-only Transformer) 직접 구현 |
+| 규모 | 약 57M (n_layer=10, n_embd=624) |
 | 토크나이저 | SentencePiece BPE 직접 학습 (vocab 16K) |
-| 학습 | 0부터 사전학습, 체크포인트 재개 지원 |
-| 환경 | Colab (A100 권장, T4 가능) |
+| 학습 | 한국어 위키로 사전학습 → KoAlpaca instruction 튜닝 |
+| 환경 | Colab GPU |
 
-## 왜 만들었나
-파인튜닝(polyglot-ko 기반)은 베이스가 남의 모델이라 "100% 내 모델"이 아니다.
-otto-GPT 는 토크나이저부터 가중치까지 전부 직접 만들어 **온전히 내 모델**임을 증명한다.
+## 파일
+- `otto_gpt_scratch.ipynb` — 토크나이저 학습 → 사전학습 (체크포인트 재개 지원)
+- `finetune_instruct_colab.ipynb` — 사전학습 모델을 질문-답변으로 추가 학습
 
-## 사용법
-`otto_gpt_scratch.ipynb` 를 Colab(GPU)에서 위에서부터 실행:
-1. 데이터 준비 (한국어 위키 + 내 `.txt`)
-2. SentencePiece 토크나이저 직접 학습
-3. 코퍼스를 토큰 배열(.bin)로 변환
-4. GPT 모델 정의 (직접 구현)
-5. 학습 (체크포인트를 Google Drive 에 저장 → 다음에 이어서 학습)
-6. 생성 테스트
+## 실행 순서
+1. `otto_gpt_scratch.ipynb` 를 위에서부터 실행 → `otto_gpt.pt` 생성
+2. `finetune_instruct_colab.ipynb` 실행 → `otto_gpt_instruct.pt` 생성 (질문에 답하는 모델)
 
-## 성장 방식
-- **더 오래 학습**: 노트북 재실행 → 체크포인트에서 이어서 학습
-- **지식 확장**: `data/` 에 새 `.txt` 추가 → 토큰 변환 후 이어서 학습
-
-> 57M 모델은 큰 모델 같은 답을 하진 못한다. 이 프로젝트의 가치는
-> "언어모델의 전 과정을 직접 설계·구현·통제했다"는 데 있다.
+체크포인트·토크나이저는 Google Drive(`MyDrive/otto_gpt/`)에 저장되어, 다음 세션에서 이어서 학습할 수 있다.
