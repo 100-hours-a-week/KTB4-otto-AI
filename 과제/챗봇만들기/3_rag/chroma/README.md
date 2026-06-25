@@ -34,7 +34,7 @@ python3 -m uvicorn app:app --reload   # http://127.0.0.1:8000
 HuggingFace Hub 에 업로드한다. 그 모델 이름을 `FINETUNED_MODEL_PATH` 에 지정한다.
 
 ## 배포
-`../hf_space/` 의 파일로 HuggingFace Space(Gradio)에 배포하면 파인튜닝 모델을 웹에서 사용할 수 있다.
+`../../5_finetune_deploy/hf_space_1.3b/` 의 파일로 HuggingFace Space(Gradio)에 배포하면 파인튜닝 모델을 웹에서 사용할 수 있다.
 
 ## 구성
 ```
