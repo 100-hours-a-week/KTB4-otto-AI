@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국어 챗봇</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f0f2f5; margin: 0; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wrap {
+    width: 420px; max-width: 95vw; height: 640px; max-height: 95vh;
+    background: #fff; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.12);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    background: #4a6cf7; color: #fff; padding: 16px 20px; font-weight: 600;
+    font-size: 17px;
+  }
+  header small { display:block; font-weight:400; opacity:.8; font-size:12px; margin-top:2px;}
+  #chat { flex: 1; padding: 16px; overflow-y: auto; background:#f7f8fa; }
+  .msg { margin: 8px 0; display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 75%; padding: 10px 14px; border-radius: 16px; line-height: 1.4;
+    font-size: 14px; white-space: pre-wrap; word-break: break-word;
+  }
+  .user .bubble { background: #4a6cf7; color: #fff; border-bottom-right-radius: 4px; }
+  .bot .bubble  { background: #fff; color: #222; border: 1px solid #e4e6eb;
+                  border-bottom-left-radius: 4px; }
+  form { display: flex; padding: 12px; gap: 8px; border-top: 1px solid #eee; }
+  input {
+    flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 22px;
+    font-size: 14px; outline: none;
+  }
+  input:focus { border-color: #4a6cf7; }
+  button {
+    background: #4a6cf7; color: #fff; border: none; border-radius: 22px;
+    padding: 0 18px; font-size: 14px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>한국어 챗봇 🤖<small>KoGPT2가 다음 토큰을 반복 생성하여 답합니다</small></header>
+  <div id="chat">
+    <div class="msg bot"><div class="bubble">안녕하세요! 무엇이든 물어보세요. (예: 오늘 기분이 안 좋아요 / 파이썬 공부 어떻게 시작하나요?)</div></div>
+  </div>
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="메시지를 입력하세요..." />
+    <button id="send" type="submit">전송</button>
+  </form>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+
+function addMsg(text, who) {
+  const msg = document.createElement("div");
+  msg.className = "msg " + who;
+  msg.innerHTML = `<div class="bubble"></div>`;
+  msg.querySelector(".bubble").textContent = text;
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+  return msg;
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  addMsg(text, "user");
+  input.value = "";
+  send.disabled = true;
+
+  const thinking = addMsg("…", "bot");
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, max_new_tokens: 60, temperature: 0.8 })
+    });
+    const data = await res.json();
+    thinking.querySelector(".bubble").textContent = data.reply || "(응답을 생성하지 못했어요)";
+  } catch (err) {
+    thinking.querySelector(".bubble").textContent = "오류가 발생했습니다: " + err;
+  } finally {
+    send.disabled = false;
+    input.focus();
+  }
+});
+</script>
+</body>
+</html>

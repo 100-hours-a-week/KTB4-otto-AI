@@ -1,0 +1,17 @@
+# Python 3.14 검증 완료 (v2, 2026-06-24)
+# FastAPI 앱(app.py)은 KoGPT2(torch) 경로 → 3.14 정상 동작.
+
+# --- KoGPT2 버전 (FastAPI 앱이 사용, 권장) ---
+torch==2.12.1
+transformers==5.12.1
+
+# --- FastAPI 웹 서버 ---
+fastapi==0.138.0
+uvicorn[standard]==0.49.0
+pydantic==2.13.4
+
+# --- LSTM 버전(chatbot_model.py / train.py) 직접 학습용 ---
+# ⚠ tensorflow 는 아직 Python 3.14 휠이 없음(cp313까지). LSTM 경로를 쓰려면
+#   Python 3.13 이하의 별도 venv 에서 설치할 것.
+# tensorflow>=2.16   # Python <=3.13
+# numpy>=1.26

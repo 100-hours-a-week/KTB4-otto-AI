@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>otto의 챗봇</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+       background:#eef1f6;margin:0;height:100vh;display:flex;align-items:center;justify-content:center}
+  .wrap{width:520px;max-width:96vw;height:700px;max-height:96vh;background:#fff;border-radius:16px;
+        box-shadow:0 8px 30px rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden}
+  header{background:#5b3df5;color:#fff;padding:16px 20px}
+  header b{font-size:17px}
+  header small{display:block;opacity:.85;font-size:12px;margin-top:3px}
+  #badge{font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px}
+  #chat{flex:1;padding:16px;overflow-y:auto;background:#f6f7fb}
+  .msg{margin:10px 0;display:flex}.msg.user{justify-content:flex-end}
+  .bubble{max-width:80%;padding:11px 14px;border-radius:14px;line-height:1.5;font-size:14px;
+          white-space:pre-wrap;word-break:break-word}
+  .user .bubble{background:#5b3df5;color:#fff;border-bottom-right-radius:4px}
+  .bot .bubble{background:#fff;color:#1a1a1a;border:1px solid #e2e6ee;border-bottom-left-radius:4px}
+  .meta{font-size:11px;color:#8a92a6;margin-top:6px}
+  .examples{padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid #f0f0f0}
+  .chip{font-size:12px;background:#eee9ff;color:#5b3df5;border:none;padding:6px 10px;border-radius:14px;cursor:pointer}
+  form{display:flex;padding:12px;gap:8px;border-top:1px solid #eee}
+  input{flex:1;padding:12px;border:1px solid #d5dae6;border-radius:22px;font-size:14px;outline:none}
+  input:focus{border-color:#5b3df5}
+  button{background:#5b3df5;color:#fff;border:none;border-radius:22px;padding:0 18px;font-size:14px;cursor:pointer}
+  button:disabled{opacity:.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><b>otto의 챗봇 🔎</b> <span id="badge">backend: ?</span>
+    <small>직접 파인튜닝한 한국어 모델로 답합니다</small></header>
+  <div id="chat">
+    <div class="msg bot"><div class="bubble">안녕하세요! 무엇이든 물어보세요. 웹을 검색해 답해드려요.</div></div>
+  </div>
+  <div class="examples">
+    <button class="chip">오늘 서울 날씨 어때?</button>
+    <button class="chip">2024 노벨 물리학상 수상자는?</button>
+    <button class="chip">파이썬 리스트랑 튜플 차이</button>
+    <button class="chip">손흥민 최근 소식 알려줘</button>
+  </div>
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="질문을 입력하세요..." />
+    <button id="send" type="submit">전송</button>
+  </form>
+</div>
+<script>
+const chat=document.getElementById("chat"),form=document.getElementById("form"),
+      input=document.getElementById("input"),send=document.getElementById("send"),
+      badge=document.getElementById("badge");
+fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({message:"ping",n_results:1})}).then(r=>r.json())
+  .then(d=>badge.textContent="backend: "+d.backend).catch(()=>{});
+function add(text,who){const m=document.createElement("div");m.className="msg "+who;
+  m.innerHTML='<div><div class="bubble"></div></div>';m.querySelector(".bubble").textContent=text;
+  chat.appendChild(m);chat.scrollTop=chat.scrollHeight;return m;}
+async function ask(t){if(!t)return;add(t,"user");input.value="";send.disabled=true;
+  const think=add("…","bot");
+  try{const r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:t,n_results:3})});const d=await r.json();
+    think.querySelector(".bubble").textContent=d.reply||"(답변 없음)";
+    const srcs=(d.sources||[]).map(s=>`${s.source}(${s.similarity})`).join(", ");
+    const meta=document.createElement("div");meta.className="meta";
+    meta.textContent=`backend: ${d.backend} · 검색출처: ${srcs}`;
+    think.firstChild.appendChild(meta);
+  }catch(e){think.querySelector(".bubble").textContent="오류: "+e;}
+  finally{send.disabled=false;input.focus();}}
+form.addEventListener("submit",e=>{e.preventDefault();ask(input.value.trim());});
+document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>ask(c.textContent)));
+</script>
+</body>
+</html>

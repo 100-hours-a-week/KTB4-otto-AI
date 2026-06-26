@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 환경변수 (API 키)
+.env
+
+# 벡터DB / 인덱스 (재생성 가능 — ingest 로 빌드)
+**/chroma_db/
+**/index/
+
+# 학습 산출물 대용량 (선택)
+# **/artifacts/*.keras
+
+# OS
+.DS_Store
