@@ -140,26 +140,3 @@ uv venv && uv pip install fastapi "uvicorn[standard]"
 uvicorn api:app --port 8001       # POST /agent
 python demo_offline.py            # Gemini/Colab 없이 완전 오프라인 데모
 ```
-
----
-
-## ✅ 과제 요구사항 충족
-
-**[5주차] 챗봇**
-- [x] 사용자 문장 → 다음 단어 생성 모델 · [x] autoregressive 문장 생성 · [x] FastAPI 래핑
-
-**[7주차] RAG**
-- [x] 개인 RAG 파이프라인 → **LangChain 마이그레이션** (`legacy/` 에 前 원본 보존)
-- [x] LangChain RAG **FastAPI REST API** 배포
-- [x] **LangSmith Tracing + Dataset 평가** (+ RAGAS 4지표 보너스)
-
-**[심화] 나만의 모델/에이전트**
-- [x] from-scratch 한국어 LLM(otto-GPT 318M) · [x] 도구 사용 에이전트 · [x] 환각 안전망
-
----
-
-## 🔑 핵심 인사이트
-
-- **파라미터 = 천장**: "시간 더 학습"이 아니라 모델 크기가 지식 용량을 정한다. 57M(ppl 31)→318M(ppl 4.4)로 증명.
-- **작은 모델 = 라우터**: 57M/318M은 지식 모델이 아니라 *도구 라우터*로 쓰고, 지식은 RAG에 외주.
-- **시스템이 모델을 메운다**: 숫자 복사 실패·환각을 에이전트 레이어(인자 재추출 + 안전 라우터 + 로컬 RAG)가 흡수.
